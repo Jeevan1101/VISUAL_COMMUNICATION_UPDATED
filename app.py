@@ -227,7 +227,11 @@ p, li { color: var(--text); }
 }
 [data-testid="stFileUploader"] label { color: var(--text) !important; }
 
-.stButton > button {
+.stButton > button,
+.stButton > button:focus,
+.stButton > button:active,
+div[data-testid="stButton"] > button,
+div[data-testid="stButton"] > button:focus {
     background: var(--accent) !important;
     color: #ffffff !important;
     font-family: 'Space Mono', monospace !important;
@@ -240,16 +244,19 @@ p, li { color: var(--text); }
     text-transform: uppercase !important;
     transition: all 0.15s ease !important;
 }
-.stButton > button * {
+.stButton > button *,
+.stButton > button p,
+.stButton > button span,
+div[data-testid="stButton"] > button p,
+div[data-testid="stButton"] > button span {
     color: #ffffff !important;
     fill: #ffffff !important;
 }
-.stButton > button p {
-    color: #ffffff !important;
-}
-.stButton > button:hover {
+.stButton > button:hover,
+div[data-testid="stButton"] > button:hover {
     background: #5dd96e !important;
     transform: translateY(-1px) !important;
+    color: #ffffff !important;
 }
 .stButton > button:hover * { color: #ffffff !important; }
 
@@ -335,42 +342,6 @@ header[data-testid="stHeader"] > div:first-child { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
-
-# ─── Floating sidebar reopen button ──────────────────────────────────────────
-st.markdown("""
-<button id="sidebar-reopen-btn" onclick="openSidebar()" title="Open sidebar">
-    &#187;&#187;
-    <span>Menu</span>
-</button>
-<script>
-(function() {
-    function getSidebarState() {
-        // Streamlit renders sidebar with data-testid="stSidebar"
-        var sb = window.parent.document.querySelector('[data-testid="stSidebar"]');
-        return sb;
-    }
-    function updateBtn() {
-        var btn = window.parent.document.getElementById('sidebar-reopen-btn');
-        if (!btn) return;
-        var sb = getSidebarState();
-        // collapsed when aria-expanded=false on the collapse button, or sidebar has collapsed class
-        var collapseBtn = window.parent.document.querySelector('[data-testid="collapsedControl"]');
-        if (collapseBtn) {
-            var isCollapsed = window.getComputedStyle(collapseBtn).display !== 'none'
-                              && (sb && sb.offsetWidth < 50);
-            btn.style.display = isCollapsed ? 'flex' : 'none';
-        }
-    }
-    window.openSidebar = function() {
-        // Click Streamlit's own collapsed-control arrow to reopen
-        var collapseBtn = window.parent.document.querySelector('[data-testid="collapsedControl"]');
-        if (collapseBtn) { collapseBtn.click(); }
-    };
-    // Poll every 400ms to detect open/close
-    setInterval(updateBtn, 400);
-})();
-</script>
-""", unsafe_allow_html=True)
 
 # ─── Pipeline Functions ───────────────────────────────────────────────────────
 
@@ -513,108 +484,119 @@ def simplify_svg_content(content, epsilon=1.0):
 
 
 # ─── SIDEBAR ─────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("""
-    <div style="padding:0.5rem 0 0.8rem 0;">
-        <div style="font-family:'Space Mono',monospace;font-size:0.6rem;
-                    color:#7cfc8e;letter-spacing:3px;text-transform:uppercase;
-                    margin-bottom:0.3rem;">✦ VectoLine</div>
-        <div style="font-size:0.78rem;color:#e0e0f0;">Advanced Settings & Reference</div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("---")
+if st.session_state.get("sidebar_open", True):
+    with st.sidebar:
+        st.markdown("""
+        <div style="padding:0.5rem 0 0.8rem 0;">
+            <div style="font-family:'Space Mono',monospace;font-size:0.6rem;
+                        color:#7cfc8e;letter-spacing:3px;text-transform:uppercase;
+                        margin-bottom:0.3rem;">✦ VectoLine</div>
+            <div style="font-size:0.78rem;color:#e0e0f0;">Advanced Settings & Reference</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown("---")
 
-    # ── Features Summary ──────────────────────────────────────
-    st.markdown("""<div style="font-family:'Space Mono',monospace;font-size:0.62rem;
-                color:#ffbb55;letter-spacing:2px;text-transform:uppercase;
-                margin-bottom:0.9rem;">★ Features</div>""", unsafe_allow_html=True)
-    st.markdown("""
-    <div style="font-size:0.78rem;color:#e0e0f0;line-height:1.85;">
+        # ── Features Summary ──
+        st.markdown("""<div style="font-family:'Space Mono',monospace;font-size:0.62rem;
+                    color:#ffbb55;letter-spacing:2px;text-transform:uppercase;
+                    margin-bottom:0.9rem;">★ Features</div>""", unsafe_allow_html=True)
+        st.markdown("""
+        <div style="font-size:0.78rem;color:#e0e0f0;line-height:1.85;">
+        <div style="margin-bottom:0.7rem;">
+            <span style="color:#7cfc8e;font-weight:700;">🖼 Single Image</span><br>
+            <span style="color:#b8b8d0;">Upload PNG / JPG / BMP and convert to a clean SVG vector. Outputs line art preview + downloadable SVG.</span>
+        </div>
+        <div style="margin-bottom:0.7rem;">
+            <span style="color:#4af0c8;font-weight:700;">🔬 Mode Compare</span><br>
+            <span style="color:#b8b8d0;">Run all 3 line-art modes side-by-side to pick the best look before vectorizing.</span>
+        </div>
+        <div style="margin-bottom:0.7rem;">
+            <span style="color:#ffbb55;font-weight:700;">📄 PDF Batch</span><br>
+            <span style="color:#b8b8d0;">Extract every image from a PDF and vectorize all at once. Download as a ZIP of SVGs.</span>
+        </div>
+        <div style="margin-bottom:0.7rem;">
+            <span style="color:#7cfc8e;font-weight:700;">⚡ RDP Simplification</span><br>
+            <span style="color:#b8b8d0;">Ramer-Douglas-Peucker reduces path points, shrinking file size while preserving shape.</span>
+        </div>
+        <div>
+            <span style="color:#4af0c8;font-weight:700;">📊 Live Metrics</span><br>
+            <span style="color:#b8b8d0;">See SVG size, path count, and point-reduction % after every conversion.</span>
+        </div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown("---")
 
-    <div style="margin-bottom:0.7rem;">
-        <span style="color:#7cfc8e;font-weight:700;">🖼 Single Image</span><br>
-        <span style="color:#b8b8d0;">Upload any PNG / JPG / BMP and convert it to a clean SVG vector. Outputs line art preview + downloadable SVG.</span>
-    </div>
+        st.markdown("""<div style="font-family:'Space Mono',monospace;font-size:0.62rem;
+                    color:#7cfc8e;letter-spacing:2px;text-transform:uppercase;
+                    margin-bottom:0.7rem;">⚙ Advanced Potrace</div>""", unsafe_allow_html=True)
+        turdsize = st.slider("Turd size (noise removal)", 0, 20, 2, 1,
+                             help="Suppress speckles smaller than N pixels")
+        alphamax = st.slider("Alpha max (corner smoothing)", 0.0, 1.5, 1.0, 0.1,
+                             help="0 = sharp corners · 1.5 = very smooth")
+        opttol   = st.slider("Opt tolerance (curve fit)", 0.1, 1.0, 0.2, 0.1,
+                             help="Tolerance for Bézier curve optimisation")
 
-    <div style="margin-bottom:0.7rem;">
-        <span style="color:#4af0c8;font-weight:700;">🔬 Mode Compare</span><br>
-        <span style="color:#b8b8d0;">Run all 3 line-art modes side-by-side to choose the best look for your image before vectorizing.</span>
-    </div>
+        st.markdown("---")
+        st.markdown("""<div style="font-family:'Space Mono',monospace;font-size:0.62rem;
+                    color:#4af0c8;letter-spacing:2px;text-transform:uppercase;
+                    margin-bottom:0.7rem;">📄 PDF Batch</div>""", unsafe_allow_html=True)
+        max_pdf_pages   = st.slider("Max pages to scan", 1, 100, 50, 5)
+        pdf_min_dim     = st.slider("Min image dimension (px)", 32, 200, 50, 10,
+                                    help="Skip images smaller than this")
+        bundle_linearts = st.checkbox("Bundle line arts in ZIP too", value=True)
 
-    <div style="margin-bottom:0.7rem;">
-        <span style="color:#ffbb55;font-weight:700;">📄 PDF Batch</span><br>
-        <span style="color:#b8b8d0;">Extract every embedded image from a PDF and vectorize them all at once. Download as a ZIP of SVGs.</span>
-    </div>
+        st.markdown("---")
+        st.markdown("""
+        <div style="font-family:'Space Mono',monospace;font-size:0.62rem;
+                    color:#7a7a99;letter-spacing:2px;text-transform:uppercase;
+                    margin-bottom:0.8rem;">ε — Epsilon Guide</div>
+        <div style="font-size:0.8rem;color:#e0e0f0;line-height:2;">
+            <b style="color:#7cfc8e;">0.5</b> — Fine detail, large file<br>
+            <b style="color:#7cfc8e;">1.0</b> — Balanced (default)<br>
+            <b style="color:#7cfc8e;">3.0</b> — Clean geometric<br>
+            <b style="color:#ffbb55;">5.0+</b> — Very coarse, tiny file
+        </div>
+        <hr style="border-color:#2a2a38;margin:1rem 0;">
+        <div style="font-family:'Space Mono',monospace;font-size:0.62rem;
+                    color:#7a7a99;letter-spacing:2px;text-transform:uppercase;
+                    margin-bottom:0.8rem;">Mode Reference</div>
+        <div style="font-size:0.8rem;color:#e0e0f0;line-height:1.9;">
+            <b style="color:#7cfc8e;">CANNY</b><br>
+            Edge detection for photos and complex scenes.<br><br>
+            <b style="color:#4af0c8;">ADAPTIVE</b><br>
+            Best for documents, sketches, manuscripts.<br><br>
+            <b style="color:#ffbb55;">XDOG</b><br>
+            Extended DoG — stylized, painterly line art.
+        </div>
+        """, unsafe_allow_html=True)
+else:
+    # Sidebar closed — use defaults so downstream code doesn't crash
+    turdsize = 2; alphamax = 1.0; opttol = 0.2
+    max_pdf_pages = 50; pdf_min_dim = 50; bundle_linearts = True
 
-    <div style="margin-bottom:0.7rem;">
-        <span style="color:#7cfc8e;font-weight:700;">⚡ RDP Simplification</span><br>
-        <span style="color:#b8b8d0;">Ramer-Douglas-Peucker algorithm reduces path points, shrinking file size while preserving shape fidelity.</span>
-    </div>
 
-    <div>
-        <span style="color:#4af0c8;font-weight:700;">📊 Live Metrics</span><br>
-        <span style="color:#b8b8d0;">See SVG size, path count, and point-reduction % after every conversion.</span>
-    </div>
-
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("---")
-
-    st.markdown("""<div style="font-family:'Space Mono',monospace;font-size:0.62rem;
-                color:#7cfc8e;letter-spacing:2px;text-transform:uppercase;
-                margin-bottom:0.7rem;">⚙ Advanced Potrace</div>""", unsafe_allow_html=True)
-    turdsize = st.slider("Turd size (noise removal)", 0, 20, 2, 1,
-                         help="Suppress speckles smaller than N pixels")
-    alphamax = st.slider("Alpha max (corner smoothing)", 0.0, 1.5, 1.0, 0.1,
-                         help="0 = sharp corners · 1.5 = very smooth")
-    opttol   = st.slider("Opt tolerance (curve fit)", 0.1, 1.0, 0.2, 0.1,
-                         help="Tolerance for Bézier curve optimisation")
-
-    st.markdown("---")
-    st.markdown("""<div style="font-family:'Space Mono',monospace;font-size:0.62rem;
-                color:#4af0c8;letter-spacing:2px;text-transform:uppercase;
-                margin-bottom:0.7rem;">📄 PDF Batch</div>""", unsafe_allow_html=True)
-    max_pdf_pages   = st.slider("Max pages to scan", 1, 100, 50, 5)
-    pdf_min_dim     = st.slider("Min image dimension (px)", 32, 200, 50, 10,
-                                help="Skip images smaller than this")
-    bundle_linearts = st.checkbox("Bundle line arts in ZIP too", value=True)
-
-    st.markdown("---")
-    st.markdown("""
-    <div style="font-family:'Space Mono',monospace;font-size:0.62rem;
-                color:#7a7a99;letter-spacing:2px;text-transform:uppercase;
-                margin-bottom:0.8rem;">ε — Epsilon Guide</div>
-    <div style="font-size:0.8rem;color:#e0e0f0;line-height:2;">
-        <b style="color:#7cfc8e;">0.5</b> — Fine detail, large file<br>
-        <b style="color:#7cfc8e;">1.0</b> — Balanced (default)<br>
-        <b style="color:#7cfc8e;">3.0</b> — Clean geometric<br>
-        <b style="color:#ffbb55;">5.0+</b> — Very coarse, tiny file
-    </div>
-    <hr style="border-color:#2a2a38;margin:1rem 0;">
-    <div style="font-family:'Space Mono',monospace;font-size:0.62rem;
-                color:#7a7a99;letter-spacing:2px;text-transform:uppercase;
-                margin-bottom:0.8rem;">Mode Reference</div>
-    <div style="font-size:0.8rem;color:#e0e0f0;line-height:1.9;">
-        <b style="color:#7cfc8e;">CANNY</b><br>
-        Edge detection for photos and complex scenes.<br><br>
-        <b style="color:#4af0c8;">ADAPTIVE</b><br>
-        Best for documents, sketches, manuscripts.<br><br>
-        <b style="color:#ffbb55;">XDOG</b><br>
-        Extended DoG — stylized, painterly line art.
-    </div>
-    """, unsafe_allow_html=True)
-
+# ─── Sidebar toggle state ─────────────────────────────────────────────────────
+if "sidebar_open" not in st.session_state:
+    st.session_state.sidebar_open = True
 
 # ─── Hero ─────────────────────────────────────────────────────────────────────
-st.markdown("""
-<div class="hero-banner">
-    <div class="hero-title">VectoLine</div>
-    <div class="hero-subtitle">Image Vectorization Pipeline</div>
-    <div class="pipeline-badge">
-        Input Image <span>→</span> Line Art <span>→</span> SVG Vector <span>→</span> Simplified SVG
+hero_col, toggle_col = st.columns([9, 1])
+with hero_col:
+    st.markdown("""
+    <div class="hero-banner">
+        <div class="hero-title">VectoLine</div>
+        <div class="hero-subtitle">Image Vectorization Pipeline</div>
+        <div class="pipeline-badge">
+            Input Image <span>→</span> Line Art <span>→</span> SVG Vector <span>→</span> Simplified SVG
+        </div>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+with toggle_col:
+    st.markdown("<div style='height:1.6rem'></div>", unsafe_allow_html=True)
+    arrow = "◀◀ MENU" if st.session_state.sidebar_open else "▶▶ MENU"
+    if st.button(arrow, key="sidebar_toggle", use_container_width=True):
+        st.session_state.sidebar_open = not st.session_state.sidebar_open
+        st.rerun()
 
 
 # ─── Pipeline Settings — ALWAYS VISIBLE (no expander) ────────────────────────
