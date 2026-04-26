@@ -20,13 +20,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─── Session state init — must happen before sidebar rendering ────────────────
-if "sidebar_open" not in st.session_state:
-    st.session_state.sidebar_open = True
-
-def _toggle_sidebar():
-    st.session_state.sidebar_open = not st.session_state.sidebar_open
-
 # ─── Custom CSS ───────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -333,12 +326,34 @@ header[data-testid="stHeader"] { background: transparent !important; border-bott
 header[data-testid="stHeader"] > div:first-child { visibility: hidden; }
 
 [data-testid="collapsedControl"] {
-    visibility: visible !important;
+    position: fixed !important;
+    top: 14px !important;
+    left: 14px !important;
+    z-index: 99999 !important;
+    width: 46px !important;
+    height: 46px !important;
+    background: #7cfc8e !important;
+    border-radius: 10px !important;
     display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    visibility: visible !important;
     opacity: 1 !important;
-    color: var(--accent) !important;
+    box-shadow: 0 2px 12px rgba(124,252,142,0.35) !important;
+    cursor: pointer !important;
+    transition: background 0.15s !important;
 }
-[data-testid="collapsedControl"] svg path { fill: var(--accent) !important; }
+[data-testid="collapsedControl"]:hover {
+    background: #5dd96e !important;
+}
+[data-testid="collapsedControl"] svg {
+    width: 20px !important;
+    height: 20px !important;
+}
+[data-testid="collapsedControl"] svg path {
+    fill: #0e0e11 !important;
+    stroke: #0e0e11 !important;
+}
 [data-testid="stToggle"] label { color: var(--text) !important; font-size: 0.8rem !important; }
 [data-testid="stSidebar"] [data-baseweb="select"] > div {
     background: var(--bg3) !important;
@@ -570,73 +585,6 @@ with st.sidebar:
         <b style="color:#ffbb55;">XDOG</b><br>Stylized, painterly line art.
     </div>
     """, unsafe_allow_html=True)
-
-
-# ─── Floating JS-powered sidebar toggle — fixed top-left ─────────────────────
-st.markdown("""
-<style>
-#sb-toggle-btn {
-    position: fixed;
-    top: 14px;
-    left: 14px;
-    z-index: 99999;
-    width: 46px;
-    height: 46px;
-    background: #7cfc8e;
-    color: #0e0e11;
-    border: none;
-    border-radius: 10px;
-    font-size: 1.3rem;
-    font-weight: 900;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 12px rgba(124,252,142,0.3);
-    transition: background 0.15s, transform 0.15s;
-    line-height: 1;
-}
-#sb-toggle-btn:hover { background: #5dd96e; transform: scale(1.08); }
-</style>
-<button id="sb-toggle-btn" title="Toggle sidebar">»</button>
-<script>
-(function(){
-    var btn = document.getElementById('sb-toggle-btn');
-    function getSidebar(){
-        return window.parent.document.querySelector('[data-testid="stSidebar"]');
-    }
-    function getNativeBtn(){
-        // Streamlit's own collapse/expand button
-        return window.parent.document.querySelector('[data-testid="collapsedControl"]') ||
-               window.parent.document.querySelector('button[aria-label="Close sidebar"]') ||
-               window.parent.document.querySelector('button[aria-label="Open sidebar"]');
-    }
-    function isCollapsed(){
-        var sb = getSidebar();
-        if(!sb) return true;
-        return sb.getAttribute('aria-expanded') === 'false' || sb.offsetWidth < 60;
-    }
-    function updateArrow(){
-        btn.textContent = isCollapsed() ? '»' : '«';
-    }
-    btn.addEventListener('click', function(){
-        // Try clicking Streamlit's native sidebar toggle
-        var nb = getNativeBtn();
-        if(nb){ nb.click(); }
-        else {
-            // Fallback: toggle aria attribute directly
-            var sb = getSidebar();
-            if(sb){
-                var expanded = sb.getAttribute('aria-expanded');
-                sb.setAttribute('aria-expanded', expanded === 'false' ? 'true' : 'false');
-            }
-        }
-        setTimeout(updateArrow, 300);
-    });
-    setInterval(updateArrow, 500);
-})();
-</script>
-""", unsafe_allow_html=True)
 
 
 # ─── Hero ─────────────────────────────────────────────────────────────────────
