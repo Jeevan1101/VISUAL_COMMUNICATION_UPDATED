@@ -20,6 +20,10 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# ─── Session state init — must happen before sidebar rendering ────────────────
+if "sidebar_open" not in st.session_state:
+    st.session_state.sidebar_open = True
+
 # ─── Custom CSS ───────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -230,9 +234,13 @@ p, li { color: var(--text); }
 .stButton > button,
 .stButton > button:focus,
 .stButton > button:active,
+.stButton > button:visited,
 div[data-testid="stButton"] > button,
-div[data-testid="stButton"] > button:focus {
+div[data-testid="stButton"] > button:focus,
+div[data-testid="stBaseButton-secondary"],
+div[data-testid="stBaseButton-secondary"]:focus {
     background: var(--accent) !important;
+    background-color: var(--accent) !important;
     color: #ffffff !important;
     font-family: 'Space Mono', monospace !important;
     font-weight: 700 !important;
@@ -244,54 +252,32 @@ div[data-testid="stButton"] > button:focus {
     text-transform: uppercase !important;
     transition: all 0.15s ease !important;
 }
+/* Force ALL children of any button to be white */
 .stButton > button *,
 .stButton > button p,
 .stButton > button span,
+.stButton > button div,
 div[data-testid="stButton"] > button p,
-div[data-testid="stButton"] > button span {
+div[data-testid="stButton"] > button span,
+div[data-testid="stButton"] > button div,
+div[data-testid="stBaseButton-secondary"] p,
+div[data-testid="stBaseButton-secondary"] span {
     color: #ffffff !important;
     fill: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
 }
 .stButton > button:hover,
-div[data-testid="stButton"] > button:hover {
+div[data-testid="stButton"] > button:hover,
+div[data-testid="stBaseButton-secondary"]:hover {
     background: #5dd96e !important;
+    background-color: #5dd96e !important;
     transform: translateY(-1px) !important;
     color: #ffffff !important;
 }
-.stButton > button:hover * { color: #ffffff !important; }
-
-/* ── Floating sidebar reopen tab ── */
-#sidebar-reopen-btn {
-    position: fixed;
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
-    z-index: 9999;
-    background: var(--accent);
-    color: #ffffff;
-    border: none;
-    border-radius: 0 8px 8px 0;
-    padding: 14px 7px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 700;
-    line-height: 1;
-    box-shadow: 2px 0 12px rgba(124,252,142,0.25);
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    transition: background 0.15s;
-}
-#sidebar-reopen-btn:hover { background: #5dd96e; }
-#sidebar-reopen-btn span {
-    writing-mode: vertical-rl;
-    font-family: 'Space Mono', monospace;
-    font-size: 0.55rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: #ffffff;
-    margin-top: 6px;
+.stButton > button:hover *,
+div[data-testid="stButton"] > button:hover * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
 }
 
 [data-testid="stDownloadButton"] > button {
@@ -575,12 +561,15 @@ else:
     max_pdf_pages = 50; pdf_min_dim = 50; bundle_linearts = True
 
 
-# ─── Sidebar toggle state ─────────────────────────────────────────────────────
-if "sidebar_open" not in st.session_state:
-    st.session_state.sidebar_open = True
+def _toggle_sidebar():
+    st.session_state.sidebar_open = not st.session_state.sidebar_open
 
 # ─── Hero ─────────────────────────────────────────────────────────────────────
-hero_col, toggle_col = st.columns([9, 1])
+toggle_col, hero_col = st.columns([1, 9])
+with toggle_col:
+    st.markdown("<div style='height:2rem'></div>", unsafe_allow_html=True)
+    arrow = "◀ HIDE" if st.session_state.sidebar_open else "▶▶ MENU"
+    st.button(arrow, key="sidebar_toggle", use_container_width=True, on_click=_toggle_sidebar)
 with hero_col:
     st.markdown("""
     <div class="hero-banner">
@@ -591,12 +580,6 @@ with hero_col:
         </div>
     </div>
     """, unsafe_allow_html=True)
-with toggle_col:
-    st.markdown("<div style='height:1.6rem'></div>", unsafe_allow_html=True)
-    arrow = "◀◀ MENU" if st.session_state.sidebar_open else "▶▶ MENU"
-    if st.button(arrow, key="sidebar_toggle", use_container_width=True):
-        st.session_state.sidebar_open = not st.session_state.sidebar_open
-        st.rerun()
 
 
 # ─── Pipeline Settings — ALWAYS VISIBLE (no expander) ────────────────────────
