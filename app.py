@@ -240,7 +240,52 @@ p, li { color: var(--text); }
     text-transform: uppercase !important;
     transition: all 0.15s ease !important;
 }
-.stButton > button:hover { background: #a0ffb0 !important; transform: translateY(-1px) !important; }
+.stButton > button * {
+    color: #ffffff !important;
+    fill: #ffffff !important;
+}
+.stButton > button p {
+    color: #ffffff !important;
+}
+.stButton > button:hover {
+    background: #5dd96e !important;
+    transform: translateY(-1px) !important;
+}
+.stButton > button:hover * { color: #ffffff !important; }
+
+/* ── Floating sidebar reopen tab ── */
+#sidebar-reopen-btn {
+    position: fixed;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    z-index: 9999;
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    border-radius: 0 8px 8px 0;
+    padding: 14px 7px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 2px 0 12px rgba(124,252,142,0.25);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s;
+}
+#sidebar-reopen-btn:hover { background: #5dd96e; }
+#sidebar-reopen-btn span {
+    writing-mode: vertical-rl;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #ffffff;
+    margin-top: 6px;
+}
 
 [data-testid="stDownloadButton"] > button {
     background: transparent !important;
@@ -290,6 +335,42 @@ header[data-testid="stHeader"] > div:first-child { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
+
+# ─── Floating sidebar reopen button ──────────────────────────────────────────
+st.markdown("""
+<button id="sidebar-reopen-btn" onclick="openSidebar()" title="Open sidebar">
+    &#187;&#187;
+    <span>Menu</span>
+</button>
+<script>
+(function() {
+    function getSidebarState() {
+        // Streamlit renders sidebar with data-testid="stSidebar"
+        var sb = window.parent.document.querySelector('[data-testid="stSidebar"]');
+        return sb;
+    }
+    function updateBtn() {
+        var btn = window.parent.document.getElementById('sidebar-reopen-btn');
+        if (!btn) return;
+        var sb = getSidebarState();
+        // collapsed when aria-expanded=false on the collapse button, or sidebar has collapsed class
+        var collapseBtn = window.parent.document.querySelector('[data-testid="collapsedControl"]');
+        if (collapseBtn) {
+            var isCollapsed = window.getComputedStyle(collapseBtn).display !== 'none'
+                              && (sb && sb.offsetWidth < 50);
+            btn.style.display = isCollapsed ? 'flex' : 'none';
+        }
+    }
+    window.openSidebar = function() {
+        // Click Streamlit's own collapsed-control arrow to reopen
+        var collapseBtn = window.parent.document.querySelector('[data-testid="collapsedControl"]');
+        if (collapseBtn) { collapseBtn.click(); }
+    };
+    // Poll every 400ms to detect open/close
+    setInterval(updateBtn, 400);
+})();
+</script>
+""", unsafe_allow_html=True)
 
 # ─── Pipeline Functions ───────────────────────────────────────────────────────
 
