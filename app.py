@@ -24,6 +24,9 @@ st.set_page_config(
 if "sidebar_open" not in st.session_state:
     st.session_state.sidebar_open = True
 
+def _toggle_sidebar():
+    st.session_state.sidebar_open = not st.session_state.sidebar_open
+
 # ─── Custom CSS ───────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -241,7 +244,7 @@ div[data-testid="stBaseButton-secondary"],
 div[data-testid="stBaseButton-secondary"]:focus {
     background: var(--accent) !important;
     background-color: var(--accent) !important;
-    color: #ffffff !important;
+    color: #0e0e11 !important;
     font-family: 'Space Mono', monospace !important;
     font-weight: 700 !important;
     font-size: 0.8rem !important;
@@ -252,7 +255,7 @@ div[data-testid="stBaseButton-secondary"]:focus {
     text-transform: uppercase !important;
     transition: all 0.15s ease !important;
 }
-/* Force ALL children of any button to be white */
+/* Force ALL text children black, hide auto-injected icons */
 .stButton > button *,
 .stButton > button p,
 .stButton > button span,
@@ -262,9 +265,16 @@ div[data-testid="stButton"] > button span,
 div[data-testid="stButton"] > button div,
 div[data-testid="stBaseButton-secondary"] p,
 div[data-testid="stBaseButton-secondary"] span {
-    color: #ffffff !important;
-    fill: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    color: #0e0e11 !important;
+    fill: #0e0e11 !important;
+    -webkit-text-fill-color: #0e0e11 !important;
+}
+/* Hide Streamlit's auto-injected Material SVG icons inside buttons */
+.stButton > button svg,
+.stButton > button img,
+div[data-testid="stButton"] > button svg,
+div[data-testid="stButton"] > button img {
+    display: none !important;
 }
 .stButton > button:hover,
 div[data-testid="stButton"] > button:hover,
@@ -272,12 +282,22 @@ div[data-testid="stBaseButton-secondary"]:hover {
     background: #5dd96e !important;
     background-color: #5dd96e !important;
     transform: translateY(-1px) !important;
-    color: #ffffff !important;
+    color: #0e0e11 !important;
 }
 .stButton > button:hover *,
 div[data-testid="stButton"] > button:hover * {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
+    color: #0e0e11 !important;
+    -webkit-text-fill-color: #0e0e11 !important;
+}
+
+/* ── Sidebar toggle arrow button ── */
+[data-testid="stButton"]:has(button[kind="secondary"]) button[kind="secondary"],
+div[key="sidebar_toggle"] button,
+.stButton > button[data-testid="baseButton-secondary"] {
+    font-size: 1.4rem !important;
+    padding: 0.4rem 0.6rem !important;
+    letter-spacing: 0 !important;
+    border-radius: 6px !important;
 }
 
 [data-testid="stDownloadButton"] > button {
@@ -561,14 +581,11 @@ else:
     max_pdf_pages = 50; pdf_min_dim = 50; bundle_linearts = True
 
 
-def _toggle_sidebar():
-    st.session_state.sidebar_open = not st.session_state.sidebar_open
-
 # ─── Hero ─────────────────────────────────────────────────────────────────────
 toggle_col, hero_col = st.columns([1, 9])
 with toggle_col:
     st.markdown("<div style='height:2rem'></div>", unsafe_allow_html=True)
-    arrow = "◀ HIDE" if st.session_state.sidebar_open else "▶▶ MENU"
+    arrow = "«" if st.session_state.sidebar_open else "»"
     st.button(arrow, key="sidebar_toggle", use_container_width=True, on_click=_toggle_sidebar)
 with hero_col:
     st.markdown("""
@@ -639,7 +656,7 @@ with tab_single:
             st.image(img_rgb, use_container_width=True)
             st.caption(f"{w} × {h} px  ·  {uploaded.size // 1024} KB")
 
-        run_btn = st.button("⚡  VECTORIZE", use_container_width=False)
+        run_btn = st.button("VECTORIZE", use_container_width=False)
 
         if run_btn:
             with st.spinner("Running pipeline…"):
@@ -702,7 +719,7 @@ with tab_compare:
         img_bgr    = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
         img_rgb    = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
 
-        run_cmp = st.button("🔬  COMPARE ALL MODES")
+        run_cmp = st.button("COMPARE ALL MODES")
         if run_cmp:
             with st.spinner("Generating all 3 modes…"):
                 c_orig, c_canny, c_adapt, c_xdog = st.columns(4)
@@ -737,7 +754,7 @@ with tab_pdf:
         with dl_col2:
             show_lineart = st.toggle("🎨 Show Line Art Preview", value=True)
 
-        run_pdf = st.button("📄  PROCESS PDF")
+        run_pdf = st.button("PROCESS PDF")
 
         if run_pdf:
             with tempfile.TemporaryDirectory() as tmp:
